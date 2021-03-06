@@ -5,32 +5,52 @@ using namespace std;
 
 int main(){
 
-std::vector<vector<unsigned char> > arr(4);
+std::vector<vector<unsigned char>> arr;
 
 std::cout << "The input matrix is";
 std::cout<<"\n";
 
-for(int i=0;i<4;i++){
+/* for(int i=0;i<4;i++){
     std::vector<unsigned char> v;
-	for (int j=0;j<4;j++){
-		if(j==0){
-		v.push_back(0);
+	//arr.push_back(v);
+
+	//for (int j=0;j<4;j++){
+		if(i==0){
+		v.push_back(0x00);
 		}
 		else{
-		v.push_back(1);
+		v.push_back(0x01);
 		}
-	arr.push_back(v);
+		arr.push_back(v);
+	//}
+	//std::cout<<"\n";
+
+} */
+for(int i=0;i<4;i++){
+    vector<unsigned char> v;
+	for (int j=0;j<4;j++){
+		if(j==0){
+		v.push_back(0x00);
+		}
+		else{
+		v.push_back(0x01);
+		}
+	
 	}
-	std::cout<<"\n";
+	arr.push_back(v);
+	
 
 }
 
+std::cout << arr.size() << '\n';
+
  for (int i = 0; i < arr.size(); i++)
 {
-    for (int j = 0; j < arr[i].size(); j++)
+    for (int j = 0; j < 4; j++)
     {
-        cout << arr[i][j];
+        std::cout <<  hex << (int) arr[i][j] << " ";
     }
+	std::cout << "\n";
 }
 
 
