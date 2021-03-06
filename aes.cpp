@@ -9,6 +9,19 @@ int main()
     vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
     vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
 
+    
+    //lengh of input block is 128 bits, nb=4 because 4 32-bit words (columns) in the state
+    int nb = 4;
+    // length of  key is 128, 192, 256 bits
+    // nk can be 4, 6, 8
+    int nk = 4;
+    // nr is a func of nk and nb and can be 10, 12, 14
+    int nr;
+    if(nk == 4){nr = 10;}
+    else if(nk == 6){nr = 12;}
+    else{nr = 14;}
+
+    
     vector<vector<unsigned char>> input = {{0x19, 0xa0, 0x9a, 0xe9}, {0x3d, 0xf4, 0xc6, 0xf8}, {0xe3, 0xe2, 0x8d, 0x48}, {0xbe, 0x2b, 0x2a, 0x08}};
     vector<vector<unsigned char>> state = input;
     
@@ -33,6 +46,22 @@ int main()
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16 }
 
     };
+
+    /* AddRoundKey();
+
+    for(int r = 1; r < nr)
+    {
+        subBytes();
+        ShiftRows();
+        MixColumns();
+        AddRoundKey();
+    }
+
+    subBytes();
+    ShiftRows();
+    MixColumns(); 
+    
+    return state; */
 
     state = subBytes(state, sbox);
 
@@ -96,6 +125,18 @@ vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>> state, v
 
     return state;
 }
+
+/*  
+vector<unsigned char> subWord(vector<unsigned char> in, vector<vector<unsigned char>> sbox)
+{
+    for(int i = 0; i < in.size(); i++)
+    {
+        unsigned char x = in[i] & 0xf0 >> 4;
+        unsigned char y = in[i] & 0x0f;
+        in[i] = sbox[x][y];
+    }
+}
+*/
 
 void printState(vector<vector<unsigned char>> state)
 {
