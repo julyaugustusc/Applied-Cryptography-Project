@@ -1,28 +1,17 @@
 #include <vector>
 #include <iostream>
+#define VERBOSE 0
 using namespace std;
 
 int main() 
 {
-    vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>>);
+    void printState(vector<vector<unsigned char>> state);
+    vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
+    vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
 
-    vector<vector<unsigned char>> input = {{'0', '1', '2', '3'}, {'4', '5', '6', '7'}, {'8', '9', 'a', 'b'}, {'c', 'd', 'e', 'f'}};
+    vector<vector<unsigned char>> input = {{0x19, 0xa0, 0x9a, 0xe9}, {0x3d, 0xf4, 0xc6, 0xf8}, {0xe3, 0xe2, 0x8d, 0x48}, {0xbe, 0x2b, 0x2a, 0x08}};
     vector<vector<unsigned char>> state = input;
-    state = subBytes(state);
-
-    for(int i = 0; i < state.size(); i++)
-    {
-        for(int j = 0; j < state.size(); j++)
-        {
-            cout << hex << (int) state[i][j] << '\n';
-        }
-    }
-
-    return 0;
-}
-
-vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>> state) 
-{
+    
     vector<vector<unsigned char>> sbox;
     sbox = 
     {
@@ -45,6 +34,22 @@ vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>> state)
 
     };
 
+    state = subBytes(state, sbox);
+
+    if(VERBOSE){printState(state);}
+
+    state = invSubBytes(state, sbox);
+
+    if(VERBOSE){printState(state);}
+
+    return 0;
+
+
+}
+
+vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>> state, vector<vector<unsigned char>> sbox) 
+{
+
     for(int i = 0; i < state.size(); i++)
     {
         for(int j = 0; j < state.size(); j++)
@@ -60,6 +65,48 @@ vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>> state)
     return state;
 }
 
+vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>> state, vector<vector<unsigned char>> sbox)
+{
+    //for each item in the state, find the row/column combination to find the original byte.
+    unsigned char xvalue = 0x00;
+    unsigned char yvalue = 0x00;
+    for(int i = 0; i < state.size(); i++)
+    {
+        for(int j = 0; j < state.size(); j++)
+        {
+            unsigned char entry = state[i][j];
+            for(int k = 0; k < sbox.size(); k++)
+            {
+                for(int l = 0; l < sbox.size(); l++)
+                {
+                    if(sbox[k][l] == state[i][j])
+                    {
+                        xvalue = k;
+                        yvalue = l;
+                        cout << "x is " << hex << (int) xvalue << " y is " << hex << (int) yvalue << "\n";
+                        xvalue = xvalue << 4;
+                        entry = xvalue | yvalue;
+                    }
+                    
+                }
+            }
+            state[i][j] = entry;
+        }
+    }
 
+    return state;
+}
 
+void printState(vector<vector<unsigned char>> state)
+{
+    for(int i = 0; i < state.size(); i++)
+        {
+            for(int j = 0; j < state.size(); j++)
+            {
+                cout << hex << (int) state[i][j] << ' ';
+            }
+            cout << "\n";
+        }
 
+        cout << "\n";
+}
