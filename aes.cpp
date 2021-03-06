@@ -8,6 +8,7 @@ int main()
     void printState(vector<vector<unsigned char>> state);
     vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
     vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
+    vector<unsigned char> subWord(vector<unsigned char>, vector<vector<unsigned char>>);
 
     
     //lengh of input block is 128 bits, nb=4 because 4 32-bit words (columns) in the state
@@ -71,6 +72,25 @@ int main()
 
     if(VERBOSE){printState(state);}
 
+    vector<unsigned char> word = {0x19, 0xa0, 0x9a, 0xe9};
+    if(VERBOSE)
+    {
+        for(int i = 0; i < word.size(); i++)
+        {
+            cout << hex << (int) word[i] << " ";
+        }
+        cout << " \n";
+    }
+    word = subWord(word, sbox);
+    if(VERBOSE)
+    {
+        for(int i = 0; i < word.size(); i++)
+        {
+            cout << hex << (int) word[i] << " ";
+        }
+        cout << " \n";
+    }
+
     return 0;
 
 
@@ -126,17 +146,18 @@ vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>> state, v
     return state;
 }
 
-/*  
+ 
 vector<unsigned char> subWord(vector<unsigned char> in, vector<vector<unsigned char>> sbox)
 {
     for(int i = 0; i < in.size(); i++)
     {
-        unsigned char x = in[i] & 0xf0 >> 4;
+        unsigned char x = (in[i] & 0xf0) >> 4;
         unsigned char y = in[i] & 0x0f;
         in[i] = sbox[x][y];
     }
+    return in;
 }
-*/
+
 
 void printState(vector<vector<unsigned char>> state)
 {
