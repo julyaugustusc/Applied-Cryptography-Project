@@ -46,7 +46,7 @@ std::cout<<"\n";
 
 std::cout << "The Output matrix is";
 
-//This loop takes each row of the given matrix and rotates(right shift) it as many times as the the row number
+//This loop takes each row of the given matrix and rotates it n times where n is the row number
 
 for (int k=0;k<4;k++){
 	count=k;
