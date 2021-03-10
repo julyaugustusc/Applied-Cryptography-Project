@@ -1,6 +1,6 @@
 #include <vector>
 #include <iostream>
-#define VERBOSE 0
+#define VERBOSE 1
 using namespace std;
 
 int main() 
@@ -9,6 +9,7 @@ int main()
     vector<vector<unsigned char>> subBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
     vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>>, vector<vector<unsigned char>>);
     vector<unsigned char> subWord(vector<unsigned char>, vector<vector<unsigned char>>);
+    vector<unsigned char> rotWord(vector<unsigned char> in);
 
     
     //lengh of input block is 128 bits, nb=4 because 4 32-bit words (columns) in the state
@@ -66,15 +67,16 @@ int main()
 
     state = subBytes(state, sbox);
 
-    if(VERBOSE){printState(state);}
+    if(VERBOSE){cout << "subBytes:\n"; printState(state);}
 
     state = invSubBytes(state, sbox);
 
-    if(VERBOSE){printState(state);}
+    if(VERBOSE){cout << "invSubBytes:\n"; printState(state);}
 
     vector<unsigned char> word = {0x19, 0xa0, 0x9a, 0xe9};
     if(VERBOSE)
     {
+        cout << "word:\n";
         for(int i = 0; i < word.size(); i++)
         {
             cout << hex << (int) word[i] << " ";
@@ -84,12 +86,23 @@ int main()
     word = subWord(word, sbox);
     if(VERBOSE)
     {
+        cout << "subWord:\n";
         for(int i = 0; i < word.size(); i++)
         {
             cout << hex << (int) word[i] << " ";
         }
         cout << " \n";
     }
+
+    word = rotWord(word);
+    if(VERBOSE)
+    {
+        cout << "rotWord:\n";
+        for(int i = 0; i < word.size(); i++)
+        {
+            cout << hex << (int) word[i] << " ";
+        }
+        cout << " \n";}
 
     return 0;
 
@@ -132,7 +145,7 @@ vector<vector<unsigned char>> invSubBytes(vector<vector<unsigned char>> state, v
                     {
                         xvalue = k;
                         yvalue = l;
-                        cout << "x is " << hex << (int) xvalue << " y is " << hex << (int) yvalue << "\n";
+                        //cout << "x is " << hex << (int) xvalue << " y is " << hex << (int) yvalue << "\n";
                         xvalue = xvalue << 4;
                         entry = xvalue | yvalue;
                     }
@@ -158,6 +171,17 @@ vector<unsigned char> subWord(vector<unsigned char> in, vector<vector<unsigned c
     return in;
 }
 
+vector<unsigned char> rotWord(vector<unsigned char> in)
+{
+    char temp;
+    temp = in[0];
+    for(int i = 0; i < in.size()-1; i++)
+    { 
+        in[i] = in[i+1]; 
+    }
+    in[in.size()-1] = temp;
+    return in;
+}
 
 void printState(vector<vector<unsigned char>> state)
 {
