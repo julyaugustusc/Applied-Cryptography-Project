@@ -118,10 +118,11 @@ int main()
     vector<vector<unsigned char>> state = assignInput(0x32, 0x43, 0xf6, 0xa8,0x88,0x5a,0x30,0x8d,0x31,0x31,0x98,0xa2,0xe0,0x37,0x07,0x34);
     vector<vector<unsigned char>> input = assignInput(0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c);
     
-    printState(state);
-    printState(input);
+    viewState(state);
+    viewState(input);
     
     vector<vector<unsigned char>> output = Cipher(state,input);
+    viewState(invCipher(output,input));
 
     return 0;
 }
@@ -408,6 +409,7 @@ vector<vector<unsigned char>> KeyExpansion(vector<vector<unsigned char>> key){
 }
 
 vector<vector<unsigned char>> AddRoundKey(vector<vector<unsigned char>> state, int rround, vector<vector<unsigned char>> KeyExpansion){
+    
     int l = rround * Nb;
     for(int i = 0; i < Nb; i++){
         state[i] = addCoef(state[i], KeyExpansion[l + i]);
@@ -474,18 +476,23 @@ vector<vector<unsigned char>> ShiftRows(vector<vector<unsigned char>> state){
     vector<unsigned char> v;
     
     for (int k=0;k<4;k++){
-	    int count=k;
+	    
         v.clear();
+        
 
 	    for (int l=0;l<4;l++){
-		    v.push_back(state[k][l]);
+	        
+		    v.push_back(state[(k+l) % Nb][l]);
+		    //cout << hex << (int)v[l] << endl;
+		    
 	    }
 
-	    std::rotate(v.begin(), v.begin()+count, v.end());
+	    //std::rotate(v.begin(), v.begin()+count, v.end());
 
 	    resultingState.push_back(v);
 
-        }
+    }
+    return resultingState;
 }
 
 vector<vector<unsigned char>> invShiftRows(vector<vector<unsigned char>> state){
@@ -497,14 +504,16 @@ vector<vector<unsigned char>> invShiftRows(vector<vector<unsigned char>> state){
         v.clear();
 
 	    for (int l=0;l<4;l++){
-	    	v.push_back(state[k][l]);
+	    	v.push_back(state[(k-l+Nb) % Nb][l]);
 	    }
 
-	    std::rotate(v.begin(), v.begin()+v.size()-count, v.end());
+	    //std::rotate(v.begin(), v.begin()+v.size()-count, v.end());
 
 	    resultingState.push_back(v);
 
     }
+    
+    return resultingState;
 }
 
 
@@ -514,25 +523,25 @@ vector<vector<unsigned char>> Cipher(vector<vector<unsigned char>> state, vector
     vector<vector<unsigned char>> roundKeyVec = KeyExpansion(cipherInput);
     
     state = AddRoundKey(state, 0, roundKeyVec);
-    printState(state);
+    viewState(state);
     
-    for( int i = 1; i < Nr - 1; i++){
+    for(int i = 1; i < Nr ; i++){
         state = subBytes(state, sbox);
-        printState(state);
+        viewState(state);
         state = ShiftRows(state);
-        printState(state);
+        viewState(state);
         state = MixColumns(state);
-        printState(state);
+        viewState(state);
         state = AddRoundKey(state, i, roundKeyVec);
-        printState(state);
+        viewState(state);
     }
     
     state = subBytes(state, sbox);
-    printState(state);
+    viewState(state);
     state = ShiftRows(state);
-    printState(state);
+    viewState(state);
     state = AddRoundKey(state, Nr, roundKeyVec);
-    printState(state);
+    viewState(state);
     
     return state;
     
@@ -544,17 +553,25 @@ vector<vector<unsigned char>> invCipher(vector<vector<unsigned char>> state, vec
     vector<vector<unsigned char>> roundKeyVec = KeyExpansion(cipherInput);
     
     state = invAddRoundKey(state, Nr, roundKeyVec);
+    viewState(state);
     
-    for( int i = Nr - 1; i < 1; i--){
+    for( int i = Nr; i <= 1; i--){
         state = invShiftRows(state);
+        viewState(state);
         state = invSubBytes(state, sbox);
+        viewState(state);
         state = invAddRoundKey(state, i, roundKeyVec);
+        viewState(state);
         state = invMixColumns(state);
+        viewState(state);
     }
     
     state = invShiftRows(state);
+    viewState(state);
     state = invSubBytes(state, sbox);
+    viewState(state);
     state = invAddRoundKey(state, Nr, roundKeyVec);
+    viewState(state);
     
     return state;
     
