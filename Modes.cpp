@@ -707,16 +707,22 @@ void printState(vector<vector<unsigned char>> state)
         cout << "\n";
 }
 
-int s = 1;
+double s = 1;
 
-vector<std::bitset<1>> CFBmodeEncrypt (int s, vector<std::bitset<1>> plainText, vector<vector<unsigned char>> IV, vector<vector<unsigned char>> key){
-    // ssuming that we've transformed the IV into a similar sized "state"
-    //the input text would also be transformed to a vector of states. So it can go one by one as many times as needed.
+vector<vector<unsigned char>> CFBmodeEncrypt (double s, vector<vector<unsigned char>> plainText, vector<vector<unsigned char>> IV, vector<vector<unsigned char>> key){
+    //plainText can be any number of bits from 1 - 128. This presents some challenges. The inner vector represents those 
+    //1-128 bit values in 8 bit unsigned characters, most significant bit as the first unsigned char in the leftmost place,
+    //just as in a state. Only this is a 1-dimentional vector and not a 2D vector for concatination/simplification of code purposes. The 2D comes in 
+    //with multiple plainTexts like 1, 2, 3 as represented in the diagram
     vector<vector<unsigned char>> tempBlock;
     vector<vector<unsigned char>> outputBlockCipher;
-    std::bitset<1> outputSelect;
-    unsigned char outputSelectTemp;
-    vector<std::bitset<1>> cipherText;
+    vector<vector<unsigned char>> cipherTextBlock;
+    vector<unsigned char> cipherText;
+    int remainderInt = (int)s % 8;
+    unsigned char tempChar;
+    unsigned char tempChar2;
+    cout << "Here1"<< endl;
+    cout << ceil(s/8) << endl;
     
     for(int i = 0; i < IV.size(); i++){
         tempBlock.push_back(IV[i]);
@@ -724,40 +730,65 @@ vector<std::bitset<1>> CFBmodeEncrypt (int s, vector<std::bitset<1>> plainText, 
     
     outputBlockCipher = Cipher(tempBlock, key);
     
-    for(int i = 0; i < (s/8+1); i++){
-        outputSelectTemp = outputBlockCipher[i / Nk][i % Nb]; // I think this will work? hard to think about
-        for(int j = 7; j >= 0; j--){
-            outputSelect[s-(i*8)+j] = (outputSelectTemp & (1 << j)) >> j;
+    for(int i = 0; i < ceil(s/8); i++){ // ceil might not work here, guess we will find out
+        if(remainderInt != 0 && i == s/8){
+            //note the 8-remainderInt zeros on the end are NOT part of this, they are least significant, but I am limited
+            tempChar = outputBlockCipher[i/Nk][i%Nb];
+            tempChar >> (8-remainderInt);
+            tempChar2 = plainText[0][i];
+            tempChar2 >> (8-remainderInt);
+            tempChar ^= tempChar2;
+            tempChar << (8-remainderInt);
+            cipherText.push_back(tempChar);
+        }else{
+            cipherText.push_back(plainText[0][i] ^ outputBlockCipher[i/Nk][i%Nb]);
         }
     }
+    cout << "Here2"<< endl;
     
-    cipherText.push_back(outputSelect ^ plainText[0]);
+    cipherTextBlock.push_back(cipherText);
+    cipherText.clear();
     
-    vector<std::bitset<1>> inputBit;
-    unsigned char inputBlockTemp;
-    int fullBlocksForS = (s/8);
-    int remainderInt = s % 8;
-    
-    for(int i = 1; i<plainText.size(); i++){
+    for(int i = 1; i < plainText.size(); i++){
         tempBlock.clear();
-        
-        if(remainderInt != 0){
-            std::bitset<8-remainderInt> remainderBitSet;
-            remainderBitSet.set();
-            for(int j = 0; j < fullBlocksForS+1; j++){
-                if(j == fullBlocksForS){
-                    inputBlockTemp = (cipherText[i-1] << (8 - remainderInt)) & 0b11111111;
-                    IV[j / Nk][j % Nb] = (IV[j / Nk][j % Nb] & remainderBitSet) | inputBlockTemp;
-                } else {
-                    inputBlockTemp = (cipherText[i-1] >> (remainderInt+((fullBlocksForS-1-j)*8))) & 0b11111111;
-                    IV[j / Nk][j % Nb] = inputBlockTemp;
-                }
+        //IV shift left s bits
+        bitset<128> IVbits;
+        bitset<128> cipherTextBits; // won't always have 128, just a space holder
+        cout << "Here3"<< endl;
+        for(int j = 0; j < 4; j++){
+            for(int k = 0; k < 4; k++){
+                //will always be 128 bits
+                IVbits |= IV[j][k] << (((3-j)*32)+((3-k)*8));
             }
-        } else {
-            for(int j = 0; j < fullBlocksForS; j++){
-                //inputBlockTemp = IV[j / Nk][j % Nb]
-                inputBlockTemp = (cipherText[i-1] >> ((fullBlocksForS-1-j)*8)) & 0b11111111;
-                IV[j / Nk][j % Nb] = inputBlockTemp;
+        }
+        
+        IVbits << s;
+        //concat with cipherTextBlock
+        cout << "Here4"<< endl;
+        for(int j = 0; j < ceil(s/8); j++){
+            if(remainderInt != 0 && i == s/8){
+                //note the 8-remainderInt zeros on the end are NOT part of this, they are least significant, but I am limited
+                cipherTextBits |= (cipherTextBlock[i-1][j] >> (8-remainderInt));
+            }else{
+                cipherTextBits |= cipherTextBlock[i-1][j] << ((((int)s/8)-j)*8+remainderInt);
+            }   
+        }
+        
+        IVbits |= cipherTextBits;
+        bitset<128> tempMask = 0b11111111;
+        bitset<128> loadBits;
+        
+        cout << "Here5"<< endl;
+        //back to state form
+        for(int j = 0; j < 4; j++){
+            for(int k = 0; k < 4; k++){
+                //will always be 128 bits // takes care of anything not 8 divisible
+                loadBits = (IVbits >> (((3-j)*32)+((3-k)*8))) & tempMask;
+                for(int z = 0; z < 8; z++){
+                    IV[j][k] = 0b00000000;
+                    IV[j][k] |= loadBits[z] << z;
+                }
+                //IV[j][k] = (IVbits >> (((3-j)*32)+((3-k)*8))) & 0b11111111;
             }
         }
         
@@ -766,37 +797,33 @@ vector<std::bitset<1>> CFBmodeEncrypt (int s, vector<std::bitset<1>> plainText, 
         }
         
         outputBlockCipher = Cipher(tempBlock, key);
-        outputSelect.reset();
         
-        if(remainderInt != 0){
-            for(int k = 0; k < (s/8)+1; k++){
-                outputSelectTemp = outputBlockCipher[k / Nk][k % Nb]; // I think this will work? hard to think about
-                if(k == (s/8)){
-                    for(int j = 7; j >= (8 - remainderInt); j--){
-                    outputSelect[s-(k*8)+j] = (outputSelectTemp & (1 << j)) >> j;
-                    }
-                } else {
-                    for(int j = 7; j >= 0; j--){
-                        outputSelect[s-(k*8)+j] = (outputSelectTemp & (1 << j)) >> j;
-                    }
-                }
-            }
-        } else {
-        
-            for(int k = 0; k < (s/8); k++){
-                outputSelectTemp = outputBlockCipher[k / Nk][k % Nb]; // I think this will work? hard to think about
-                for(int j = 7; j >= 0; j--){
-                    outputSelect[s-(k*8)+j] = (outputSelectTemp & (1 << j)) >> j;
-                }
+        for(int j = 0; j < ceil(s/8); j++){ // ceil might not work here, guess we will find out
+            if(remainderInt != 0 && j == s/8){
+                //note the 8-remainderInt zeros on the end are NOT part of this, they are least significant, but I am limited
+                tempChar = outputBlockCipher[j/Nk][j%Nb];
+                tempChar >> (8-remainderInt);
+                tempChar2 = plainText[i][j];
+                tempChar2 >> (8-remainderInt);
+                tempChar ^= tempChar2;
+                tempChar << (8-remainderInt);
+                cipherText.push_back(tempChar);
+                
+                
+                //cipherText.push_back((outputBlockCipher[j/Nk][j%Nb] >> (8-remainderInt)) ^ (plainText[i][j] >> (8-remainderInt))) <<(8-remainderInt)
+            }else{
+                cipherText.push_back(plainText[i][j] ^ outputBlockCipher[j/Nk][j%Nb]);
             }
         }
-        cipherText.push_back(outputSelect ^ plainText[i]);
-        
+        cipherTextBlock.push_back(cipherText);
+        cipherText.clear();
+      
     }
-    return cipherText;
+
+    return cipherTextBlock;
 }
 
-vector<vector<vector<unsigned char>>> CFBmodeDecrypt (vector<vector<vector<unsigned char>>> cipherText, vector<vector<unsigned char>> IV, vector<vector<unsigned char>> key){
+/*vector<vector<vector<unsigned char>>> CFBmodeDecrypt (vector<vector<vector<unsigned char>>> cipherText, vector<vector<unsigned char>> IV, vector<vector<unsigned char>> key){
     // ssuming that we've transformed the IV into a similar sized "state"
     //the input text would also be transformed to a vector of states. So it can go one by one as many times as needed.
     vector<vector<unsigned char>> tempBlock;
@@ -821,7 +848,7 @@ vector<vector<vector<unsigned char>>> CFBmodeDecrypt (vector<vector<vector<unsig
     }
     
     return plainText;
-}
+}*/
     
      
     
@@ -903,7 +930,7 @@ int main()
     vector<vector<vector<unsigned char>>> plainText = {{{0x6b, 0xc1, 0xbe, 0xe2}, {0x2e, 0x40, 0x9f, 0x96}, {0xe9, 0x3d, 0x7e, 0x11}, {0x73, 0x93, 0x17, 0x2a}}, 
         {{0xae, 0x2d, 0x8a, 0x57}, {0x1e, 0x03, 0xac, 0x9c}, {0x9e, 0xb7, 0x6f, 0xac}, {0x45, 0xaf, 0x8e, 0x51}}, {{0x30, 0xc8, 0x1c, 0x46}, {0xa3, 0x5c, 0xe4, 0x11}, 
         {0xe5, 0xfb, 0xc1, 0x19}, {0x1a, 0x0a, 0x52, 0xef}}, {{0xf6, 0x9f, 0x24, 0x45}, {0xdf, 0x4f, 0x9b, 0x17}, {0xad, 0x2b, 0x41, 0x7b}, {0xe6, 0x6c, 0x37, 0x10}}};
-    vector<std::bitset<1>> plainText1 = {0,1,1,0,1,0,1,1,1,1,0,0,0,0,0,1};
+    vector<vector<unsigned char>> plainText1 = {{0x00}, {0x01}, {0x01}, {0x00}, {0x01}, {0x00}, {0x01}, {0x01}, {0x01}, {0x01}, {0x00}, {0x00}, {0x00}, {0x00}, {0x00}, {0x01}};
     
     /*vector<vector<vector<unsigned char>>> encrypt = CBCmodeEncrypt(plainText, IV, key);
     
@@ -919,9 +946,10 @@ int main()
     viewState(decrypt[2]);
     viewState(decrypt[3]);*/
     
-    vector<std::bitset<1>> encrypt1 = CFBmodeEncrypt(s, plainText1, IV, key);
-    for(int i = 0; i < 16; i++){
-        cout<< encrypt1[i] << endl;
+    vector<vector<unsigned char>> encrypt1 = CFBmodeEncrypt(1, plainText1, IV, key);
+    
+    for(int i = 0; i < encrypt1.size(); i++){
+        cout << (bitset<8>)(int)encrypt1[i][0] << endl;
     }
     
     
