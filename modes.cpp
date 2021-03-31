@@ -83,6 +83,14 @@ vector<unsigned char> addCoef(vector<unsigned char> coef1, vector<unsigned char>
     return result;
 }
 
+vector<unsigned char> addCoef2(vector<unsigned char> coef1, vector<unsigned char> coef2){
+    vector<unsigned char> result;
+    for (int i = 0; i < Nk; i++){
+        result.push_back(addition(coef1[i], coef2[i])); //Most significant NOT first, based on index #, this is different
+    }
+    return result;
+}
+
 vector<vector<vector<unsigned char>>> inputTextToBlocks(string input){
     unsigned char inputChar;
     vector<unsigned char> columns;
@@ -907,8 +915,133 @@ vector<vector<vector<unsigned char>>> ECBmodeDecrypt (vector<vector<vector<unsig
     return plainText;
 }
     
+vector<vector<vector<unsigned char>>> CTRmodeEncrypt (vector<vector<unsigned char>> counter1,vector<vector<vector<unsigned char>>> inputBlocks,vector<vector<unsigned char>> key){
+    vector<vector<vector<unsigned char>>> outputBlocks;
+    vector<vector<vector<unsigned char>>> output;
+     vector<vector<unsigned char>> outCipher;
+     vector<vector<unsigned char>> tempBlock;
+     int j=3;
+     int k=3;
+     int l;
+     int m;
+    for(int i = 0; i<4; i++){
+        outCipher = Cipher(counter1,key);
+        outputBlocks.push_back(outCipher); 
     
-     
+    //alternative to incrementing counter
+    // if(counter1[3][3]==0xff){
+    //     counter1[3][3]=0x00;
+    //     counter1[3][2]++;
+    // } else {counter1[3][3]++;
+    // }
+    
+    if(counter1[j][k]==0xff) {
+        l=j;
+        m=k;
+        while(j>0 and counter1[j][k]==0xff){
+            while (k>=0 and counter1[j][k]==0xff){
+                counter1[j][k]=0x00;
+                if (k==0 and !counter1[j-1][k]==0xff){
+                    counter1[j][k+3]++;
+                    break;
+                }
+                if (counter1[j][k-1]==0xff){
+                    continue;
+                }
+                else{
+                    counter1[j][k-1]++;
+                    break;
+                }
+                k--;
+            }
+            j--;
+            k=3;
+        }
+        j=l;
+        k=m;
+    }
+    else{
+        counter1[3][3]++;
+        }
+
+    }
+    
+    for(int j = 0; j < inputBlocks.size(); j++){
+        for(int i = 0; i < inputBlocks.size(); i++){
+            tempBlock.push_back(addCoef2(inputBlocks[j][i],outputBlocks[j][i]));
+        }
+        output.push_back(tempBlock);
+        tempBlock.clear();
+    }
+    return output;
+}
+
+vector<vector<vector<unsigned char>>> CTRmodeDecrypt (vector<vector<unsigned char>> counter1,vector<vector<vector<unsigned char>>> cipherText,vector<vector<unsigned char>> key){
+    vector<vector<vector<unsigned char>>> plainText;
+    vector<vector<vector<unsigned char>>> outText;
+    vector<vector<unsigned char>> tempBlock;
+    vector<vector<unsigned char>> outInvCipher;
+     int j=3;
+     int k=3;
+     int l;
+     int m;
+    
+    //plainText.push_back(tempBlock);
+    
+    for(int i = 0; i<4; i++){
+        
+        outInvCipher = Cipher(counter1,key);
+        
+        plainText.push_back(outInvCipher);
+        
+    if(counter1[3][3]==0xff){
+        counter1[3][3]=0x00;
+        counter1[3][2]++;
+    } else {counter1[3][3]++;
+    }
+        
+    // if(counter1[j][k]==0xff) {
+    //     l=j;
+    //     m=k;
+    //     while(j>0 and counter1[j][k]==0xff){
+    //         while (k>=0 and counter1[j][k]==0xff){
+    //             counter1[j][k]=0x00;
+    //             if (k==0 and !counter1[j-1][k]==0xff){
+    //                 counter1[j][k+3]++;
+    //                 break;
+    //             }
+    //             if (counter1[j][k-1]==0xff){
+    //                 continue;
+    //             }
+    //             else{
+    //                 counter1[j][k-1]++;
+    //                 break;
+    //             }
+    //             k--;
+    //         }
+    //         j--;
+    //         k=3;
+    //     }
+    //     j=l;
+    //     k=m;
+    // }
+    // else{
+    //     counter1[3][3]++;
+    //     }
+
+    }    
+    for(int j = 0; j < cipherText.size(); j++){
+        for(int i = 0; i < cipherText.size(); i++){
+            tempBlock.push_back(addCoef2(plainText[j][i],cipherText[j][i]));
+        }
+        outText.push_back(tempBlock);
+        tempBlock.clear();
+    }
+    
+    return outText;
+}
+    
+
   
 int main()
 {
@@ -982,7 +1115,11 @@ int main()
         {{0xae, 0x2d, 0x8a, 0x57}, {0x1e, 0x03, 0xac, 0x9c}, {0x9e, 0xb7, 0x6f, 0xac}, {0x45, 0xaf, 0x8e, 0x51}}, {{0x30, 0xc8, 0x1c, 0x46}, {0xa3, 0x5c, 0xe4, 0x11}, 
         {0xe5, 0xfb, 0xc1, 0x19}, {0x1a, 0x0a, 0x52, 0xef}}, {{0xf6, 0x9f, 0x24, 0x45}, {0xdf, 0x4f, 0x9b, 0x17}, {0xad, 0x2b, 0x41, 0x7b}, {0xe6, 0x6c, 0x37, 0x10}}};
     vector<vector<unsigned char>> plainText1 = {{0b00}, {0b01}, {0b01}, {0b00}, {0b01}, {0b00}, {0b01}, {0b01}, {0b01}, {0b01}, {0b00}, {0b00}, {0b00}, {0b00}, {0b00}, {0b01}};
-    //vector<vector<unsigned char>> plainText2 = 
+    vector<vector<unsigned char>> plainText2 = {{0xf0, 0xf1, 0xf2, 0xf3}, {0xf4, 0xf5, 0xf6, 0xf7}, {0xf8, 0xf9, 0xfa, 0xfb}, {0xfc, 0xfd, 0xfe, 0xff}};
+    vector<vector<vector<unsigned char>>> cipherText1 = {{{0x87, 0x4d, 0x61, 0x91}, {0xb6, 0x20, 0xe3, 0x26}, {0x1b, 0xef, 0x68, 0x64}, {0x99, 0x0d, 0xb6, 0xce}}, 
+        {{0x98, 0x06, 0xf6, 0x6b}, {0x79, 0x70, 0xfd, 0xff}, {0x86, 0x17, 0x18, 0x7b}, {0xb9, 0xff, 0xfd, 0xff}}, {{0x5a, 0xe4, 0xdf, 0x3e}, {0xdb, 0xd5, 0xd3, 0x5e}, 
+        {0x5b, 0x4f, 0x09, 0x02}, {0x0d, 0xb0, 0x3e, 0xab}}, {{0x1e, 0x03, 0x1d, 0xda}, {0x2f, 0xbe, 0x03, 0xd1}, {0x79, 0x21, 0x70, 0xa0}, {0xf3, 0x00, 0x9c, 0xee}}};
+   
     /*vector<vector<vector<unsigned char>>> encrypt = CBCmodeEncrypt(plainText, IV, key);
     
     viewState(encrypt[0]);
@@ -1003,22 +1140,36 @@ int main()
     //     cout << (bitset<8>)(int)encrypt1[i][0] << endl;
     // }
     
-    vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plainText,key);
+    //vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plainText,key);
     
-    viewState(encrypt[0]);
+    //viewState(encrypt[0]);
     // viewState(encrypt[1]);
     // viewState(encrypt[2]);
     // viewState(encrypt[3]);
     
-    vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
+    //vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
     
-    viewState(decrypt[0]);
+    //viewState(decrypt[0]);
     // viewState(decrypt[1]);
     // viewState(decrypt[2]);
     // viewState(decrypt[3]);
     
+    // vector<vector<vector<unsigned char>>> encrypt = CTRmodeEncrypt(plainText2,plainText,key);
+    // viewState(encrypt[0]);
+    // viewState(encrypt[1]);
+    // viewState(encrypt[2]);
+    // viewState(encrypt[3]);
+
+    vector<vector<vector<unsigned char>>> decrypt = CTRmodeDecrypt(plainText2,cipherText1,key);
+    viewState(decrypt[0]);
+    viewState(decrypt[1]);
+    viewState(decrypt[2]);
+    viewState(decrypt[3]);
+
+
     return 0;
 }
+
 
 
 
