@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -881,12 +882,156 @@ vector<vector<unsigned char>> CFBmodeEncrypt (double s, vector<vector<unsigned c
     }
     
     return plainText;
-}*/
+}*/  
+
+void viewPlain(vector<vector<unsigned char>> state){
+    //ONLY SUPPORTS 4x4 AT THE MOMENT
+    int l = state.size();
     
+    cout << "State:" << endl;
+    
+    //this is difficult due to the fact it functionally goes by columns and not rows, so we can't just print columns.
+    
+    
+    for (int i = 0; i < l; i++){
+        vector<unsigned char>::iterator it1 = state[i].begin();
+        int z = state[i].size();
+        for (int j=0;j<z;j++){
+            printf("%02x ", (unsigned int)(unsigned char)*it1);
+            it1++;
+        }
+    }
+
+    cout << '\n';
+}
+
+
+unsigned char decToHexa(int n)
+{
+    switch (n) {
+  case 0:
+    cout << "\n";
+    cout << "0x00";
+    cout << "\n";
+    return 0x00;
+  case 1:
+    cout << "\n";
+    cout << "0x01";
+    cout << "\n";
+    return 0x01;
+  case 2:
+    cout << "\n";
+    cout << "0x02";
+    cout << "\n";
+    return 0x02;
+  case 3:
+    cout << "\n";
+    cout << "0x03";
+    cout << "\n";
+    return 0x03;
+}
+}
+
+int HexTodec(unsigned char n)
+{
+    switch (n) {
+  case 0x00:
+    cout << "\n";
+    return 0;
+  case 0x01:
+    cout << "\n";
+    return 1;
+  case 0x02:
+    cout << "\n";
+    return 2;
+  case 0x03:
+    cout << "\n";
+    return 3;
+    }}
+
+    vector<vector<vector<unsigned char>>> PaddingMethod (vector<vector<vector<unsigned char>>> inputBlocks){
+        int l = inputBlocks.size();
+        int z = inputBlocks[l-1].size();
+        int z2 = inputBlocks[l-1][z-1].size();
+        int j=0;
+        int paddedentries=0;
+        int paddedvectors=0;
+        vector<unsigned char> indicator = {0x00,0x00,0x00,0x00};
+        vector<vector<unsigned char>> padindicator;
+        unsigned char res;
+        unsigned char res2;
+        while(z2<4){
+            cout << "\n";
+            cout << z << "Adjusting column entries";
+            inputBlocks[l-1][z-1].push_back(0x00);
+            z2++;
+            paddedentries++;
+        }
+        
+        while(!(z%4==0)){
+            cout << "\n";
+            cout << "Adjusting block length";
+            inputBlocks[l-1].push_back(indicator);
+            z++;
+            paddedvectors++;
+        }
+        res=decToHexa(paddedentries);
+        res2=decToHexa(paddedvectors);
+        for(int i=0;i<3;i++){
+            padindicator.push_back(indicator);
+        }
+        padindicator.push_back({0x00,0x00,res,res2});
+        inputBlocks.push_back(padindicator);
+        
+        viewState(inputBlocks[l-1]);
+        viewState(inputBlocks[l]);
+    
+        return inputBlocks;
+    }
+
+     vector<vector<vector<unsigned char>>> InvPaddingMethod (vector<vector<vector<unsigned char>>> plainText, unsigned char m,unsigned char n){
+        plainText.pop_back();
+        int l = plainText.size();
+        cout << l;
+        int z1 = HexTodec(n);
+        cout << z1;
+         cout << "hell frmo";
+        for(int i=0;i<z1;i++){
+            plainText[l-1].pop_back();
+        }
+        int z2 = HexTodec(m);
+        cout << z2;
+        cout << "hell to";
+        for(int i=0;i<z2;i++){
+            plainText[l-1][3-n].pop_back();
+        }
+        
+        // for(int j=0,j<(3-n),j++){
+            // for(int k=0;k<(3-m);k++){
+            //     cout << plainText[l-1][3-n][k];
+            // }
+        //}
+        
+        viewPlain(plainText[l-1]);
+        
+        return plainText;
+     }
+
+
+
+
     vector<vector<vector<unsigned char>>> ECBmodeEncrypt (vector<vector<vector<unsigned char>>> inputBlocks,vector<vector<unsigned char>> key){
     vector<vector<vector<unsigned char>>> outputBlocks;
-     vector<vector<unsigned char>> outCipher;
-    
+    vector<vector<unsigned char>> outCipher;
+    int l = inputBlocks.size();
+    int z = inputBlocks[l-1].size();
+    int z2 = inputBlocks[l-1][z-1].size();
+    cout << inputBlocks[l-1][z-1].size();
+    cout << "\n";
+    if(!(z%4==0) or z2<4){
+        inputBlocks = PaddingMethod(inputBlocks);
+    }
+    cout << "\n";
     for(int i = 0; i<inputBlocks.size(); i++){
         outCipher = Cipher(inputBlocks[i],key);
         
@@ -911,8 +1056,19 @@ vector<vector<vector<unsigned char>>> ECBmodeDecrypt (vector<vector<vector<unsig
         plainText.push_back(outInvCipher);
         
     }
+    int l = plainText.size();
     
-    return plainText;
+    for(int i=0;i<4;i++){
+        if(plainText[l-1][i][0]==0x00 and plainText[l-1][i][1]==0x00 and plainText[l-1][i][2]==0x00 and plainText[l-1][i][3]==0x00)
+        continue;
+        else if(i==3 and plainText[l-1][i][0]==0x00 and plainText[l-1][i][1]==0x00){
+            cout << plainText[l-1][i][3];
+            InvPaddingMethod(plainText,plainText[l-1][i][2],plainText[l-1][i][3]);
+        }
+        else{
+            return plainText;
+        }
+    }
 }
     
 vector<vector<vector<unsigned char>>> CTRmodeEncrypt (vector<vector<unsigned char>> counter1,vector<vector<vector<unsigned char>>> inputBlocks,vector<vector<unsigned char>> key){
@@ -955,7 +1111,7 @@ vector<vector<vector<unsigned char>>> CTRmodeEncrypt (vector<vector<unsigned cha
                 k--;
             }
             j--;
-            k=3;
+            k=3; 
         }
         j=l;
         k=m;
@@ -1114,6 +1270,10 @@ int main()
     vector<vector<vector<unsigned char>>> plainText = {{{0x6b, 0xc1, 0xbe, 0xe2}, {0x2e, 0x40, 0x9f, 0x96}, {0xe9, 0x3d, 0x7e, 0x11}, {0x73, 0x93, 0x17, 0x2a}}, 
         {{0xae, 0x2d, 0x8a, 0x57}, {0x1e, 0x03, 0xac, 0x9c}, {0x9e, 0xb7, 0x6f, 0xac}, {0x45, 0xaf, 0x8e, 0x51}}, {{0x30, 0xc8, 0x1c, 0x46}, {0xa3, 0x5c, 0xe4, 0x11}, 
         {0xe5, 0xfb, 0xc1, 0x19}, {0x1a, 0x0a, 0x52, 0xef}}, {{0xf6, 0x9f, 0x24, 0x45}, {0xdf, 0x4f, 0x9b, 0x17}, {0xad, 0x2b, 0x41, 0x7b}, {0xe6, 0x6c, 0x37, 0x10}}};
+    vector<vector<vector<unsigned char>>> plain = {{{0x6b, 0xc1, 0xbe, 0xe2}, {0x2e, 0x40, 0x9f, 0x96}, {0xe9, 0x3d, 0x7e, 0x11}, {0x73, 0x93, 0x17, 0x2a}}, 
+        {{0xae, 0x2d, 0x8a, 0x57}, {0x1e, 0x03, 0xac, 0x9c}, {0x9e, 0xb7, 0x6f, 0xac}, {0x45, 0xaf, 0x8e, 0x51}}, {{0x30, 0xc8, 0x1c, 0x46}, {0xa3, 0x5c, 0xe4, 0x11}, 
+        {0xe5, 0xfb, 0xc1, 0x19}, {0x1a, 0x0a, 0x52, 0xef}}, {{0xf6, 0x9f, 0x24, 0x45}, {0xdf, 0x4f, 0x9b, 0x17}}};
+ 
     vector<vector<unsigned char>> plainText1 = {{0b00}, {0b01}, {0b01}, {0b00}, {0b01}, {0b00}, {0b01}, {0b01}, {0b01}, {0b01}, {0b00}, {0b00}, {0b00}, {0b00}, {0b00}, {0b01}};
     vector<vector<unsigned char>> plainText2 = {{0xf0, 0xf1, 0xf2, 0xf3}, {0xf4, 0xf5, 0xf6, 0xf7}, {0xf8, 0xf9, 0xfa, 0xfb}, {0xfc, 0xfd, 0xfe, 0xff}};
     vector<vector<vector<unsigned char>>> cipherText1 = {{{0x87, 0x4d, 0x61, 0x91}, {0xb6, 0x20, 0xe3, 0x26}, {0x1b, 0xef, 0x68, 0x64}, {0x99, 0x0d, 0xb6, 0xce}}, 
@@ -1140,19 +1300,20 @@ int main()
     //     cout << (bitset<8>)(int)encrypt1[i][0] << endl;
     // }
     
-    //vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plainText,key);
+    vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plain,key);
     
-    //viewState(encrypt[0]);
+    // viewState(encrypt[0]);
     // viewState(encrypt[1]);
     // viewState(encrypt[2]);
     // viewState(encrypt[3]);
+    // viewState(encrypt[4]);
+    vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
     
-    //vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
-    
-    //viewState(decrypt[0]);
-    // viewState(decrypt[1]);
+    viewState(decrypt[0]);
+    viewState(decrypt[1]);
     // viewState(decrypt[2]);
     // viewState(decrypt[3]);
+    
     
     // vector<vector<vector<unsigned char>>> encrypt = CTRmodeEncrypt(plainText2,plainText,key);
     // viewState(encrypt[0]);
@@ -1160,11 +1321,11 @@ int main()
     // viewState(encrypt[2]);
     // viewState(encrypt[3]);
 
-    vector<vector<vector<unsigned char>>> decrypt = CTRmodeDecrypt(plainText2,cipherText1,key);
-    viewState(decrypt[0]);
-    viewState(decrypt[1]);
-    viewState(decrypt[2]);
-    viewState(decrypt[3]);
+    // vector<vector<vector<unsigned char>>> decrypt = CTRmodeDecrypt(plainText2,cipherText1,key);
+    // viewState(decrypt[0]);
+    // viewState(decrypt[1]);
+    // viewState(decrypt[2]);
+    // viewState(decrypt[3]);
 
 
     return 0;
