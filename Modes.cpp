@@ -1057,34 +1057,38 @@ vector<vector<vector<unsigned char>>> OFBmodeEncrypt (vector<vector<vector<unsig
     for(int i = 0; i < IV.size(); i++){
         tempBlock.push_back(IV[i]);
     }
-    viewState(IV);
+    viewState(tempBlock);
+    cout << "Hello1";
     
     outputBlockCipher = Cipher(tempBlock, key);
     viewState(outputBlockCipher);
+    cipherText.clear();
     
     for(int j = 0; j < IV.size(); j++){
-        cipherText.clear();
         cipherText.push_back(addCoef(outputBlockCipher[j], plainText[0][j]));
     }
     
-    
+    viewState(plainText[0]);
     viewState(cipherText);
     cipherTextBlock.push_back(cipherText);
+    cout << "Hello1" << endl;
     //viewState(cipherTextBlock[0]);
     
     for(int i = 1; i < plainText.size(); i++){
+        cout << "Hello3" << endl;
         tempBlock.clear();
         
         tempBlock = outputBlockCipher;
-        
+        cout << "Hello4" << endl;
         outputBlockCipher = Cipher(tempBlock, key);
         viewState(outputBlockCipher);
         
+        cipherText.clear();
         for(int j = 0; j < IV.size(); j++){
-            tempBlock.clear();
-            tempBlock.push_back(addCoef(outputBlockCipher[j], plainText[i][j]));
+            
+            cipherText.push_back(addCoef(outputBlockCipher[j], plainText[i][j]));
         }
-        cipherTextBlock.push_back(tempBlock);
+        cipherTextBlock.push_back(cipherText);
         viewState(cipherTextBlock[i]);
     }
 
@@ -1521,7 +1525,7 @@ int main()
     vector<vector<unsigned char>> decrypt3 = CFBmodeDecrypt(128, encrypt3, IV, key);*/
     
     //OFB 
-    /*vector<vector<vector<unsigned char>>> encryptOFB = OFBmodeEncrypt(plainText, IV, key);
+    vector<vector<vector<unsigned char>>> encryptOFB = OFBmodeEncrypt(plainText, IV, key);
     
     viewState(encryptOFB[0]);
     viewState(encryptOFB[1]);
@@ -1533,22 +1537,24 @@ int main()
     viewState(decryptOFB[0]);
     viewState(decryptOFB[1]);
     viewState(decryptOFB[2]);
-    viewState(decryptOFB[3]);*/
+    viewState(decryptOFB[3]);
     
     
     //ECB with padding test
-    vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plain,key);
+    //vector<vector<vector<unsigned char>>> encrypt = ECBmodeEncrypt(plain,key);
     
     // viewState(encrypt[0]);
     // viewState(encrypt[1]);
     // viewState(encrypt[2]);
     // viewState(encrypt[3]);
     // viewState(encrypt[4]);
-    vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
+    //vector<vector<vector<unsigned char>>> decrypt = ECBmodeDecrypt(encrypt, key);
     
     
     return 0;
 }
+
+
 
 
 
